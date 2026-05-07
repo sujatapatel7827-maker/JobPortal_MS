@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | AI JobPortal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">AI JobPortal</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/dashboard.html">Dashboard</a>
+            <button onclick="logout()" class="btn btn-outline" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </nav>
+    <main class="container">
+        <h1 style="margin-bottom: 2rem;">My Profile</h1>
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+            <!-- Profile Info & Resume -->
+            <div class="glass">
+                <h3 style="margin-bottom: 1rem;">Account Info</h3>
+                <p id="userName" style="font-weight: 600; font-size: 1.2rem;"></p>
+                <p id="userEmail" style="color: var(--text-muted); margin-bottom: 2rem;"></p>
+
+                <h3 style="margin-bottom: 1rem;">Resume</h3>
+                <div id="resumeStatus" style="margin-bottom: 1rem; color: var(--text-muted);">No resume uploaded</div>
+                <form id="resumeForm">
+                    <div class="form-group">
+                        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" required style="padding: 0.5rem;">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Upload Resume</button>
+                </form>
+            </div>
+
+            <!-- Skills Management -->
+            <div class="glass">
+                <h3 style="margin-bottom: 1rem;">My Skills (AI Matching)</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Add your skills here to get better AI job recommendations. Use comma-separated values.
+                </p>
+                
+                <div class="form-group">
+                    <textarea id="skillsInput" rows="4" placeholder="React, Node.js, Python, SQL, Project Management..."></textarea>
+                </div>
+                <button onclick="saveSkills()" class="btn btn-primary">Save Skills</button>
+                
+                <div style="margin-top: 2rem;">
+                    <h4>Current Skills:</h4>
+                    <div id="skillBadges" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+                        <!-- Badges here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        async function loadProfile() {
+            const data = await api.get('/user/profile');
+            document.getElementById('userName').innerText = data.user.name;
+            document.getElementById('userEmail').innerText = data.user.email;
+            
+            if (data.resume) {
+                document.getElementById('resumeStatus').innerHTML = `
+                    <span style="color: #10b981">✓ Resume Uploaded</span><br>
+                    <a href="${data.resume}" target="_blank" style="color: var(--primary); text-decoration: none; font-size: 0.8rem;">View Current</a>
+                `;
+            }
+
+            document.getElementById('skillsInput').value = data.skills.join(', ');
+            updateSkillBadges(data.skills);
+        }
+
+        function updateSkillBadges(skills) {
+            const container = document.getElementById('skillBadges');
+            container.innerHTML = skills.map(s => `<span class="tag" style="background: var(--primary); color: white; border: none;">${s}</span>`).join('');
+        }
+
+        async function saveSkills() {
+            const skills = document.getElementById('skillsInput').value.split(',').map(s => s.trim()).filter(s => s);
+            const res = await api.post('/user/skills', { skills });
+            if (res.message) {
+                alert('Skills updated!');
+                updateSkillBadges(skills);
+            }
+        }
+
+        document.getElementById('resumeForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('resume', document.getElementById('resumeFile').files[0]);
+            
+            const res = await api.upload('/user/resume', formData);
+            if (res.filePath) {
+                alert('Resume uploaded successfully!');
+                loadProfile();
+            } else {
+                alert(res.message || 'Upload failed');
+            }
+        };
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

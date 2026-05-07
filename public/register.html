@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | AI JobPortal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">AI JobPortal</a>
+    </nav>
+
+    <main class="container">
+        <div class="glass auth-form">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Create Account</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label>Account Type</label>
+                    <select id="role" required>
+                        <option value="applicant">Job Seeker</option>
+                        <option value="employer">Employer</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Register</button>
+                <p style="text-align: center; margin-top: 1.5rem; color: var(--text-muted);">
+                    Already have an account? <a href="/login.html" style="color: var(--primary); text-decoration: none;">Login</a>
+                </p>
+            </form>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                name: e.target.name.value,
+                email: e.target.email.value,
+                password: e.target.password.value,
+                role: e.target.role.value
+            };
+            const res = await api.post('/auth/register', data);
+            if (res.message) {
+                alert('Registration successful! Please login.');
+                window.location.href = '/login.html';
+            } else {
+                alert(res.error || 'Registration failed');
+            }
+        };
+    </script>
+</body>
+</html>

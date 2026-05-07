@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | AI JobPortal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">AI JobPortal</a>
+        <div class="nav-links" id="navLinks">
+            <a href="/">Home</a>
+            <a href="/profile.html">Profile</a>
+            <button onclick="logout()" class="btn btn-outline" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </nav>
+    <main class="container">
+        <div id="employerDashboard" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Employer Dashboard</h1>
+                <button onclick="showPostJob()" class="btn btn-primary">Post New Job</button>
+            </div>
+            
+            <div class="job-grid" id="employerJobs">
+                <!-- Employer jobs here -->
+            </div>
+        </div>
+
+        <div id="applicantDashboard" style="display: none;">
+            <h1>My Applications</h1>
+            <div class="job-grid" id="applicantApps" style="margin-top: 2rem;">
+                <!-- Applicant applications here -->
+            </div>
+        </div>
+
+        <!-- Post Job Modal/Form -->
+        <div id="postJobSection" class="glass" style="display: none; margin-top: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+            <h2 style="margin-bottom: 1.5rem">Post a New Position</h2>
+            <form id="postJobForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" id="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" id="company" required>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="location" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Range</label>
+                        <input type="text" id="salary" placeholder="e.g. $80k - $120k">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Required Skills (Comma separated for AI Matching)</label>
+                    <input type="text" id="requirements" placeholder="React, Node.js, AWS, MySQL">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="description" rows="5"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">Post Job</button>
+                    <button type="button" onclick="hidePostJob()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = '/login.html';
+
+        async function init() {
+            if (user.role === 'employer') {
+                document.getElementById('employerDashboard').style.display = 'block';
+                loadEmployerJobs();
+            } else {
+                document.getElementById('applicantDashboard').style.display = 'block';
+                loadApplicantApps();
+            }
+        }
+
+        async function loadEmployerJobs() {
+            const jobs = await api.get('/user/dashboard');
+            const container = document.getElementById('employerJobs');
+            container.innerHTML = jobs.map(job => `
+                <div class="glass job-card">
+                    <h3>${job.title}</h3>
+                    <p style="color: var(--text-muted)">${job.app_count} Applicants</p>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <a href="/applicants.html?jobId=${job.id}" class="btn btn-outline" style="font-size: 0.8rem">View Applicants</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadApplicantApps() {
+            const apps = await api.get('/user/dashboard');
+            const container = document.getElementById('applicantApps');
+            container.innerHTML = apps.map(app => `
+                <div class="glass job-card">
+                    <div class="job-header">
+                        <h3>${app.title}</h3>
+                        <span class="match-badge" style="background: var(--glass); color: white;">${app.status.toUpperCase()}</span>
+                    </div>
+                    <p style="color: var(--primary)">${app.company}</p>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem">Applied on ${new Date(app.applied_at).toLocaleDateString()}</p>
+                </div>
+            `).join('');
+        }
+
+        function showPostJob() {
+            document.getElementById('postJobSection').style.display = 'block';
+            document.getElementById('employerDashboard').style.display = 'none';
+        }
+
+        function hidePostJob() {
+            document.getElementById('postJobSection').style.display = 'none';
+            document.getElementById('employerDashboard').style.display = 'block';
+        }
+
+        document.getElementById('postJobForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                title: e.target.title.value,
+                company: e.target.company.value,
+                location: e.target.location.value,
+                salary: e.target.salary.value,
+                requirements: e.target.requirements.value,
+                description: e.target.description.value
+            };
+            await api.post('/jobs', data);
+            alert('Job posted!');
+            hidePostJob();
+            loadEmployerJobs();
+        };
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        init();
+    </script>
+</body>
+</html>

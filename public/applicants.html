@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applicants | AI JobPortal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">AI JobPortal</a>
+        <div class="nav-links">
+            <a href="/dashboard.html">Dashboard</a>
+            <button onclick="logout()" class="btn btn-outline" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1 style="margin-bottom: 2rem;">Applicants</h1>
+        
+        <div class="job-grid" id="applicantGrid">
+            <!-- Applicants here -->
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('jobId');
+
+        async function loadApplicants() {
+            const applicants = await api.get(`/user/job/${jobId}/applicants`);
+            const grid = document.getElementById('applicantGrid');
+            
+            if (applicants.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-muted)">No applicants yet.</p>';
+                return;
+            }
+
+            grid.innerHTML = applicants.map(app => `
+                <div class="glass job-card">
+                    <h3>${app.name}</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;">${app.email}</p>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        ${app.resume ? `
+                            <a href="${app.resume}" target="_blank" class="btn btn-outline" style="font-size: 0.8rem">View Resume</a>
+                        ` : '<span style="color: var(--text-muted); font-size: 0.8rem">No Resume</span>'}
+                        <button class="btn btn-primary" style="font-size: 0.8rem" onclick="alert('Feature coming soon: Accept/Reject')">${app.status.toUpperCase()}</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        loadApplicants();
+    </script>
+</body>
+</html>

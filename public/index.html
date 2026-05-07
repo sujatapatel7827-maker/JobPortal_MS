@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI JobPortal | Find Your Dream Job</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">AI JobPortal</a>
+        <div class="nav-links">
+            <a href="/jobs.html">Browse Jobs</a>
+            <a href="/login.html" id="loginBtn">Login</a>
+            <a href="/register.html" id="registerBtn">Register</a>
+            <div id="userMenu" style="display: none; gap: 1rem; align-items: center;">
+                <a href="/dashboard.html">Dashboard</a>
+                <a href="/profile.html">Profile</a>
+                <button onclick="logout()" class="btn btn-outline" style="padding: 0.5rem 1rem;">Logout</button>
+            </div>
+        </div>
+    </nav>
+    <main class="container">
+        <section class="hero">
+            <h1>Unlock Your Potential with <br><span style="color: var(--primary)">AI-Powered</span> Job Search</h1>
+            <p>Connect with top employers and discover opportunities tailored specifically to your unique skill set using our advanced matching engine.</p>
+            
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search job titles, skills...">
+                <input type="text" id="locationInput" placeholder="Location...">
+                <button onclick="searchJobs()" class="btn btn-primary">Find Jobs</button>
+            </div>
+        </section>
+
+        <section id="featuredJobs">
+            <h2 style="margin-bottom: 2rem;">Featured Opportunities</h2>
+            <div class="job-grid" id="jobGrid">
+                <!-- Jobs will be loaded here -->
+            </div>
+        </section>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const locationInput = document.getElementById('locationInput');
+
+        // Load values on start
+        searchInput.value = localStorage.getItem('lastSearch') || '';
+        locationInput.value = localStorage.getItem('lastLocation') || '';
+
+        // Save values on input
+        searchInput.addEventListener('input', (e) => localStorage.setItem('lastSearch', e.target.value));
+        locationInput.addEventListener('input', (e) => localStorage.setItem('lastLocation', e.target.value));
+
+        async function searchJobs() {
+            const search = searchInput.value;
+            const location = locationInput.value;
+            
+            const jobs = await api.get(`/jobs?search=${search}&location=${location}`);
+            renderJobs(jobs);
+        }
+
+        async function loadJobs() {
+            // Reverted: Only show jobs after search or if search is already present
+            if (searchInput.value || locationInput.value) {
+                searchJobs();
+            } else {
+                const grid = document.getElementById('jobGrid');
+                grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; text-align: center; padding: 4rem;">Enter a job title or location above to find your next opportunity.</p>';
+            }
+        }
+
+        function renderJobs(jobs) {
+            const grid = document.getElementById('jobGrid');
+            if (jobs.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; text-align: center; padding: 4rem;">No jobs found for this search.</p>';
+                return;
+            }
+            grid.innerHTML = jobs.map(job => `
+                <div class="glass job-card">
+                    <div class="job-header">
+                        <div>
+                            <h3 style="margin-bottom: 0.5rem">${job.title}</h3>
+                            <p style="color: var(--primary); font-weight: 600">${job.company} ${job.isLive ? '<span class="tag" style="background: #10b981; color: white; border: none; font-size: 0.6rem; vertical-align: middle;">LIVE API</span>' : ''}</p>
+                        </div>
+                        ${job.matchScore ? `<span class="match-badge">${job.matchScore}% Match</span>` : ''}
+                    </div>
+                    <div style="margin-bottom: 1.5rem">
+                        <span class="tag">${job.location}</span>
+                        <span class="tag">${job.salary}</span>
+                    </div>
+                    <a href="/job-detail.html?id=${job.id}" class="btn btn-outline" style="width: 100%">View Details</a>
+                </div>
+            `).join('');
+        }
+
+        function checkAuth() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('registerBtn').style.display = 'none';
+                document.getElementById('userMenu').style.display = 'flex';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.reload();
+        }
+
+        loadJobs();
+        checkAuth();
+    </script>
+</body>
+</html>
